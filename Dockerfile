@@ -3,7 +3,7 @@ FROM maven:3.8.5-openjdk-17 AS build
 COPY . .
 RUN mvn clean package -DskipTests
 
-# Stage 2: Create a lightweight runtime environment to run the built JAR
+# Stage 2: Create a lightweight runtime environment to run the built JARl
 FROM eclipse-temurin:17-jdk-alpine
 VOLUME /tmp
 COPY --from=build /target/*.jar app.jar
