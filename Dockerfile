@@ -9,4 +9,4 @@ VOLUME /tmp
 COPY --from=build /target/*.jar app.jar
 
 # Explicitly forward the environment variables to the Java process at runtime
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT java -Dspring.datasource.url=jdbc:mysql://$DB_HOST:$DB_PORT/$DB_NAME -Dspring.datasource.username=$DB_USER -Dspring.datasource.password=$DB_PASSWORD -jar /app.jar
