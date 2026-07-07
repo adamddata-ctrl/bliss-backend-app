@@ -1,7 +1,6 @@
 package com.example.demo;
 
 import com.example.demo.user.User;
-import com.example.demo.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
