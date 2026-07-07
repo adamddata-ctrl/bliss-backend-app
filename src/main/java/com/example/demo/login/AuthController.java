@@ -1,43 +1,70 @@
+
+
 package com.example.demo.login;
 
 import com.example.demo.user.User;
-import com.example.demo.user.UserRepository;
+import com.example.demo.repository.UserRepository;
+import com.example.demo.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder; // 👈 Correct modern import
-import org.springframework.web.bind.annotation.*;
-import java.util.Map;
-import java.util.Optional;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
+import java.util.Map;
+
+@CrossOrigin(origins = {"http://localhost:4200", "https://bliss-front-2x0f.onrender.com"}, allowCredentials = "true")
+//@CrossOrigin(origins = "http://localhost:4200")
 @RestController
 @RequestMapping("/api/auth")
- @CrossOrigin(origins = {"http://localhost:4200", "https://bliss-front-2x0f.onrender.com"}, allowCredentials = "true")   
-//@CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder; // 👈 Inject the encoder bean from SecurityConfig
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-        // 1. Look up the user by username in the database
-        Optional<User> userOptional = userRepository.findByUsername(loginRequest.getUsername());
+    public ResponseEntity<?> authenticateUser(@RequestBody Map<String, String> loginRequest) {
+        String username = loginRequest.get("username");
+        String password = loginRequest.get("password");
 
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password));
 
-            // 2. Safely compare incoming raw password with the database BCrypt hash string
-            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(username);
 
-                // Return success token string matching your Angular service expectations
-                return ResponseEntity.ok(Map.of("token", "dummy-jwt-token-string-bliss"));
-            }
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", jwt);
+        response.put("username", username);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> signUpRequest) {
+        String username = signUpRequest.get("username");
+        String password = signUpRequest.get("password");
+
+        if (userRepository.findByUsername(username).isPresent()) {
+            return ResponseEntity.badRequest().body("Error: Username is already taken!");
         }
 
-        // Return 401 Unauthorized if verification fails
-        return ResponseEntity.status(401).body(Map.of("message", "Invalid username or password!"));
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
+
+        userRepository.save(user);
+        return ResponseEntity.ok("User registered successfully!");
     }
 }
