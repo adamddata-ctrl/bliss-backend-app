@@ -24,8 +24,8 @@ public class MetricsController {
         Map<String, Long> metrics = menuRepository.findAll().stream()
                 .filter(item -> item.getCategory() != null)
                 .collect(Collectors.groupingBy(
-                        item -> item.getCategory().toLowerCase().trim(),
-                        Collectors.counting()
+                         item -> item.getCategory().toLowerCase().trim(),
+                         Collectors.counting()
                 ));
         return ResponseEntity.ok(metrics);
     }
